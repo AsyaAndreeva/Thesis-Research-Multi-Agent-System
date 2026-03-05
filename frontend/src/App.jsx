@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { Brain, Search, PenSquare, ShieldCheck, Download, Sparkles, Loader2 } from 'lucide-react'
+import { Brain, Search, PenSquare, ShieldCheck, Download, Sparkles, Loader2, Settings2, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
 
 // ─── Agent metadata ──────────────────────────────────────────────────────────
 const AGENTS = [
@@ -8,13 +8,13 @@ const AGENTS = [
     key: 'research',
     name: 'Researcher',
     icon: <Search size={18} />,
-    description: 'Gathering 2025 flood data & citations',
+    description: 'Gathering data & citations',
   },
   {
     key: 'architecture',
     name: 'Chief Architect',
     icon: <Brain size={18} />,
-    description: 'Mapping to I.S.E.E. framework',
+    description: 'Mapping to technical framework',
   },
   {
     key: 'draft',
@@ -29,6 +29,22 @@ const AGENTS = [
     description: 'Verifying citations & tone',
   },
 ]
+
+// ─── Defaults ───────────────────────────────────────────────────────────────
+const DEFAULT_CONFIG = {
+  domain: 'floods',
+  year: '2025',
+  regions: ['global', 'European', 'Bulgarian'],
+  architectureName: 'I.S.E.E.',
+  architectureDetails: [
+    'Standard MLP (for major floods)',
+    'Minor-Sensitive MLP (for nuisance floods)',
+    'Spatial GNN (for topological flow)',
+    'Physics-Informed Engine (modifies rain predictions based on slope, clay content, and river distance)',
+    'Max-Wins safety logic (for conflict resolution between models)'
+  ],
+  forbiddenWords: ['ensemble']
+}
 
 // ─── Helper: determine card status ───────────────────────────────────────────
 function agentStatus(agentKey, activeAgent, result) {
@@ -56,6 +72,11 @@ export default function App() {
   const [result, setResult]         = useState(null)
   const [error, setError]           = useState(null)
   const [activeTab, setActiveTab]   = useState('final')
+  
+  // Settings State
+  const [showSettings, setShowSettings] = useState(false)
+  const [config, setConfig] = useState(DEFAULT_CONFIG)
+  const [newDetail, setNewDetail] = useState('')
 
   async function handleGenerate() {
     if (!topic.trim() || loading) return
@@ -63,29 +84,26 @@ export default function App() {
     setResult(null)
     setError(null)
 
-    // Simulate per-agent progress by advancing the indicator client-side.
-    // The actual work is done server-side in one request; we just animate
-    // through agent states in 4 approximately equal slices of elapsed time.
     const agentKeys = AGENTS.map(a => a.key)
     let agentIdx = 0
     setActiveAgent(agentKeys[0])
     const progressInterval = setInterval(() => {
       agentIdx = Math.min(agentIdx + 1, agentKeys.length - 1)
       setActiveAgent(agentKeys[agentIdx])
-    }, 15000) // advance every ~15 s (pipeline usually takes 45-90 s total)
+    }, 15000)
 
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic }),
+        body: JSON.stringify({ topic, config }),
       })
       clearInterval(progressInterval)
       setActiveAgent(null)
 
       if (!res.ok) {
-        const { detail } = await res.json().catch(() => ({ detail: 'Unknown error' }))
-        throw new Error(detail)
+        const { error } = await res.json().catch(() => ({ error: 'Unknown server error' }))
+        throw new Error(error)
       }
 
       const data = await res.json()
@@ -100,9 +118,19 @@ export default function App() {
     }
   }
 
-  // Allow Ctrl/Cmd+Enter to submit
   function handleKeyDown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleGenerate()
+  }
+
+  const addDetail = () => {
+    if (!newDetail.trim()) return
+    setConfig({ ...config, architectureDetails: [...config.architectureDetails, newDetail.trim()] })
+    setNewDetail('')
+  }
+
+  const removeDetail = (index) => {
+    const nextDetails = config.architectureDetails.filter((_, i) => i !== index)
+    setConfig({ ...config, architectureDetails: nextDetails })
   }
 
   const tabs = AGENTS.filter(a => result?.[a.key]).map(a => ({ key: a.key, label: a.name }))
@@ -113,15 +141,98 @@ export default function App() {
       <header className="header">
         <div className="header-badge">
           <Sparkles size={12} />
-          I.S.E.E. Multi-Agent Thesis System
+          Multi-Agent Thesis System
         </div>
-        <h1>Generate World-Class<br />Thesis Chapters</h1>
+        <h1>Generate Custom<br />Thesis Chapters</h1>
         <p>
-          Powered by four specialized AI agents: Researcher, Chief Architect,
-          Academic Writer, and Peer Reviewer — all working in sequence to write
-          your Master's Thesis on the I.S.E.E. flood monitoring platform.
+          Sequence specialized AI agents to write professional academic chapters for any research topic.
         </p>
       </header>
+
+      {/* ── Settings Toggle ── */}
+      <div className="settings-controls">
+        <button 
+          className={`settings-toggle-btn glass ${showSettings ? 'active' : ''}`}
+          onClick={() => setShowSettings(!showSettings)}
+        >
+          <Settings2 size={16} />
+          Project Settings
+          {showSettings ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+      </div>
+
+      {/* ── Settings Panel ── */}
+      {showSettings && (
+        <div className="glass settings-panel animate-in">
+          <div className="settings-grid">
+            <div className="settings-section">
+              <h3>Research Context</h3>
+              <div className="input-group">
+                <label>Domain Topic</label>
+                <input 
+                  type="text" 
+                  value={config.domain} 
+                  onChange={e => setConfig({...config, domain: e.target.value})}
+                  placeholder="e.g., floods, smart agriculture"
+                />
+              </div>
+              <div className="input-group">
+                <label>Target Year</label>
+                <input 
+                  type="text" 
+                  value={config.year} 
+                  onChange={e => setConfig({...config, year: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="settings-section">
+              <h3>Architectural Framework</h3>
+              <div className="input-group">
+                <label>System Name</label>
+                <input 
+                  type="text" 
+                  value={config.architectureName} 
+                  onChange={e => setConfig({...config, architectureName: e.target.value})}
+                />
+              </div>
+              <div className="input-group">
+                <label>Core Components</label>
+                <div className="details-list">
+                  {config.architectureDetails.map((detail, idx) => (
+                    <div key={idx} className="detail-item glass">
+                      <span>{detail}</span>
+                      <button onClick={() => removeDetail(idx)}><Trash2 size={12} /></button>
+                    </div>
+                  ))}
+                </div>
+                <div className="add-detail">
+                  <input 
+                    type="text" 
+                    value={newDetail} 
+                    onChange={e => setNewDetail(e.target.value)}
+                    placeholder="Add component..."
+                    onKeyDown={e => e.key === 'Enter' && addDetail()}
+                  />
+                  <button onClick={addDetail}><Plus size={16} /></button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="settings-section">
+              <h3>Constraints</h3>
+              <div className="input-group">
+                <label>Forbidden Words (comma separated)</label>
+                <input 
+                  type="text" 
+                  value={config.forbiddenWords.join(', ')} 
+                  onChange={e => setConfig({...config, forbiddenWords: e.target.value.split(',').map(s => s.trim())})}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Input Card ── */}
       <div className="glass input-card">
@@ -133,7 +244,7 @@ export default function App() {
             id="topic-input"
             className="topic-input"
             rows={2}
-            placeholder="e.g., Draft Chapter 1: Introduction based on 2025 global and European flood data"
+            placeholder={`Draft a chapter about ${config.domain}...`}
             value={topic}
             onChange={e => setTopic(e.target.value)}
             onKeyDown={handleKeyDown}
