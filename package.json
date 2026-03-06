@@ -4,7 +4,7 @@
   "description": "Multi-agent AI system for generating Master's Thesis chapters on the I.S.E.E. flood monitoring platform.",
   "private": true,
   "scripts": {
-    "dev:api": "node -e \"require('./api/generate.js')\" && echo API loaded",
+    "dev:api": "node local-server.js",
     "dev:frontend": "cd frontend && npm run dev",
     "build": "cd frontend && npm install && npm run build",
     "vercel-build": "cd frontend && npm install && npm run build"
