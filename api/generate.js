@@ -13,7 +13,7 @@ const { GoogleGenAI } = require("@google/genai");
 // ─── Gemini client ─────────────────────────────────────────────────────────
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const MODEL = "gemini-2.0-flash"; // fast model, good for chained calls
+const MODEL = "gemini-3-flash-preview"; // latest Gemini 3 model for best performance
 
 /**
  * Core LLM call helper.
