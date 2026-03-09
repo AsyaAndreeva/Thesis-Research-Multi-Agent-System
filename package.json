@@ -5,9 +5,9 @@
   "private": true,
   "scripts": {
     "dev:api": "node local-server.js",
-    "dev:frontend": "cd frontend && npm run dev",
-    "build": "cd frontend && npm run build",
-    "vercel-build": "cd frontend && npm run build"
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "vercel-build": "npm run build --workspace=frontend"
   },
   "workspaces": [
     "frontend"
